@@ -1,45 +1,15 @@
 # import the necessary packages
 import h5py
 import os
-
+import numpy as np
 
 from collections import Mapping, Container
 from sys import getsizeof
 
-def deep_getsizeof(o, ids):
-    """Find the memory footprint of a Python object
-    This is a recursive function that rills down a Python object graph
-    like a dictionary holding nested ditionaries with lists of lists
-    and tuples and sets.
-    The sys.getsizeof function does a shallow size of only. It counts each
-    object inside a container as pointer only regardless of how big it
-    really is.
-    :param o: the object
-    :param ids:
-    :return:
-    """
-    d = deep_getsizeof
-    if id(o) in ids:
-        return 0
-
-    r = getsizeof(o)
-    ids.add(id(o))
-
-    if isinstance(o, str) or isinstance(0, bytes):
-        return r
-
-    if isinstance(o, Mapping):
-        return r + sum(d(k, ids) + d(v, ids) for k, v in o.iteritems())
-
-    if isinstance(o, Container):
-        return r + sum(d(x, ids) for x in o)
-
-    return r
-
 
 class HDF5DatasetWriter:
     def __init__(self, Idims, Bdims, navdims, outputPath,
-                 bufSize=50):
+                 bufSize=1000):
                 # check to see if the output path exists, and if so, raise
                 # an exception
                 if os.path.exists(outputPath):
@@ -83,32 +53,30 @@ class HDF5DatasetWriter:
     def flush(self):
         # write the buffers to disk then reset the buffer
         #print("current index {} and increment {}".format(self.idx,len(self.buffer["images"])))
-        #print("size of image buffer {}".format(deep_getsizeof(self.buffer["images"], set())))
-        #print("size of bpatches buffer {}".format(deep_getsizeof(self.buffer["bpatches"], set())))
-        #print("size of pixcoords buffer {}".format(deep_getsizeof(self.buffer["pixcoords"], set())))
-        #print("size of utmcoods buffer {}".format(deep_getsizeof(self.buffer["utmcoords"], set())))
-        #print("size of buffer {}".format(deep_getsizeof(self.buffer, set())))
-
-        #print("length of bpatches buffer {}".format(len(self.buffer["bpatches"])))
-
         i = self.idx + len(self.buffer["images"])
-        #print("size of hdf5 images store before adding buffer {}".format(deep_getsizeof(self.images, set())))
         self.images[self.idx:i] = self.buffer["images"]
-        #print("size of hdf5 images store after adding buffer {}".format(deep_getsizeof(self.images, set())))
-        #print("size of hdf5 bpatches store before adding buffer {}".format(deep_getsizeof(self.bpatches, set())))
         self.bpatches[self.idx:i] = self.buffer["bpatches"]
-        #print("size of hdf5 bpatches store after adding buffer {}".format(deep_getsizeof(self.bpatches, set())))
         self.pixcoords[self.idx:i] = self.buffer["pixcoords"]
         self.utmcoords[self.idx:i] = self.buffer["utmcoords"]
         self.idx = i
         self.buffer = {"images": [],"bpatches": [], "pixcoords": [], "utmcoords": []}
 
 
-    def close(self):
+    def close(self, shuffle=False):
         # check to see if there are any other entries in the buffer
         # that need to be flushed to disk
         if len(self.buffer["images"]) > 0:
             self.flush()
+
+        # shuffle before closing
+        if shuffle:
+            print("shuffling hd5f before closing with {} rows".format(len(self.images)))
+            indeces = np.arange(len(self.images))
+            remixed = np.random.shuffle(indeces)
+            self.images = self.images[remixed]
+            self.bpatches = self.bpatches[remixed]
+            self.pixcoords = self.pixcoords[remixed]
+            self.utmcoords = self.utmcoords[remixed]
 
         # close the dataset
         self.db.close()
