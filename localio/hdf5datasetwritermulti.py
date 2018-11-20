@@ -20,6 +20,7 @@ class HDF5DatasetWriter:
                 # open the HDF5 database for writing and create four datasets:
                 # one to store the images/features and another to store the
                 #  class labels
+                self.outputPath = outputPath
                 self.db = h5py.File(outputPath, "w")
                 self.images = self.db.create_dataset("images", Idims,
                     dtype="i1")
@@ -70,13 +71,23 @@ class HDF5DatasetWriter:
 
         # shuffle before closing
         if shuffle:
-            print("shuffling hd5f before closing with {} rows".format(len(self.images)))
-            indeces = np.arange(len(self.images))
-            remixed = np.random.shuffle(indeces)
-            self.images = self.images[remixed]
-            self.bpatches = self.bpatches[remixed]
-            self.pixcoords = self.pixcoords[remixed]
-            self.utmcoords = self.utmcoords[remixed]
+            # print("shuffling hd5f before closing with {} rows".format(len(self.images)))
+
+            # this doesn't work - getting OSError unable to create file on h5py.File call
+            name, ext = os.path.splitext(self.outputPath)
+            outputPathshuffle = name+"shuffle"+ext
+            if os.path.exists(outputPathshuffle):
+                raise ValueError("The supplied 'outputPath' already "
+                                "exists and cannot be overwritten. Manually delete "
+                                 "the file before continuing.", outputPathshuffle)
+            f = h5py.File(outputPathshuffle, 'w')
+            indexes = np.arange(self.images.shape[0])
+            np.random.shuffle(indexes)
+            for key in self.db.keys():
+                print(key)
+                feed = np.take(self.db[key], indexes, axis=0)
+                f.create_dataset(key, data=feed)
+            f.close()
 
         # close the dataset
         self.db.close()

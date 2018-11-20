@@ -1,7 +1,7 @@
 # import the necessary packages
 import cv2
 
-class SimplePreprocessor
+class SimplePreprocessor:
     def __init__(self, width, height, inter=cv2.INTER_AREA):
         # store the arget image width, height, and interpoloation
         # method used when resizing

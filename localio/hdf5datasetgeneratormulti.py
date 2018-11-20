@@ -33,10 +33,6 @@ class HDF5DatasetGenerator:
                 bpatches = self.db["bpatches"][i: i + self.batchSize]
                 pixcoords = self.db["pixcoords"][i: i + self.batchSize]
 
-                # check to see if the lables should be binarized
-                if self.binarize:
-                    labels = np_utils.to_categorical(labels,
-                                                     self.classes)
 
                 # check to see if our preprocessors are not None
                 if self.preprocessors is not None:
@@ -59,11 +55,11 @@ class HDF5DatasetGenerator:
 
                 # if the data augmentor exists, apply it
                 if self.aug is not None:
-                    (images, labels) = next(self.aug.flow(images,
-                                                          labels, batch_size=self.batchSize))
+                    (images, [bpatches,pixcoords]) = next(self.aug.flow(images,
+                                                          [bpatches, pixcoords], batch_size=self.batchSize))
 
                 # yield a tuple of images and labels
-                yield (images, labels)
+                yield (images, bpatches, pixcoords)
 
             # increment the total number of epochs
             epochs += 1

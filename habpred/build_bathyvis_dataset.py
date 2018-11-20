@@ -2,7 +2,7 @@
 from affine import Affine
 from pyimagesearch.habpred.config import habpred_config as config
 from sklearn.model_selection import train_test_split
-from pyimagesearch.preprocessing.tricroppreprocessor import TriCropPreprocessor
+from pyimagesearch.preprocessing.simplepreprocessor import SimplePreprocessor
 from pyimagesearch.localio.hdf5datasetwritermulti import HDF5DatasetWriter
 from pyimagesearch.utils import renavutils3 as rutil
 from imutils import paths
@@ -56,7 +56,7 @@ def extract_geotransform(bathy_path):
     #plt.imshow(in_ds.GetRasterBand(1).ReadAsArray(), cmap="nipy_spectral")
     return (in_ds,geotransform)
 
-cp = TriCropPreprocessor(128,128)
+sp = SimplePreprocessor(config.IMAGE_SIZE_COLS,config.IMAGE_SIZE_ROWS)
 
 # extract image paths and coordinates from stereo_pose_est.data
 renav, o_lat, o_lon, ftype = rutil.read_renav(config.NAV_PATH)
@@ -95,17 +95,14 @@ datasets = [
 
 half_patch = np.floor(config.BPATCH_SIZE/2)
 
-
-
 # loop over the dataset tuples
 for (dType, Imgnames, outputPath) in datasets:
-    # assuming three crops, four rotations and horionral flips
-    # is 3 x4 x2 = 24 instances
-    num_examples = 24 * len(Imgnames)
+
+    num_examples = len(Imgnames)
     # create HDF5 writer
     print("[INFO] building {} with {} images, bathy patches and georef coords...".format(outputPath, len(Imgnames)))
     writer = HDF5DatasetWriter((num_examples, config.IMAGE_SIZE_ROWS, config.IMAGE_SIZE_COLS, 3),
-                               (num_examples, config.BPATCH_SIZE, config.BPATCH_SIZE),
+                              (num_examples, config.BPATCH_SIZE, config.BPATCH_SIZE),
                                (num_examples, config.PIXCOORD_SIZE),
                                outputPath)
 
@@ -137,6 +134,10 @@ for (dType, Imgnames, outputPath) in datasets:
         # if we are building the training dataset, then compute the
         # mean of each channel in the image, then update the
         # respective lists
+
+        image = sp.preprocess(image)
+        writer.add([image], [bathy_patch], [(px,py)], [(x,y)])
+
         if dType == "train":
             (b, g, r) = cv2.mean(image)[:3]
             R.append(r)
@@ -147,9 +148,9 @@ for (dType, Imgnames, outputPath) in datasets:
         # and bathy patch
         # and coordinates in pixels (px, py) and UTM (x,y) for image
         #print(" adding {} to buffer. image shape {}".format(i,image.shape))
-        crops = cp.preprocess(image)
-        for crop in crops:
-            writer.add([crop], [bathy_patch], [(px,py)], [(x,y)])
+        # crops = sp.preprocess(image)
+        # for crop in crops:
+        #     writer.add([crop], [bathy_patch], [(px,py)], [(x,y)])
 
         pbar.update(i)
         #if i%200 == 0 :
@@ -157,7 +158,10 @@ for (dType, Imgnames, outputPath) in datasets:
 
     # close the HDF5 writer
     pbar.finish()
-    writer.close(shuffle=True)
+    writer.close(shuffle=False)
+
+
+
 
 # construct a dictionary of averages, the serialise the means to a
 # JSON file
