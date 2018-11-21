@@ -4,7 +4,8 @@ import cv2
 import imutils
 
 class CropRotFlipPreprocessor:
-    # generates up to 24 versions of the input image using 3 crops, 4 rotations and horizontal flips
+    # generates one version of the image doing a random square crop
+    # along the long dimension and then randomly applying one of 4 rotations and horizontal flips
     def __init__(self, width, height, horiz=True, rots=True, inter=cv2.INTER_AREA):
         # store the target image width, height, whether or not
         # horizontal flips should be included, along with the
