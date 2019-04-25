@@ -73,17 +73,19 @@ class AdversarialAutoencoder():
 
         # The autoencoder takes the image, encodes it and reconstructs it
         # from the encoding
-        encoded_repr = self.encoder(img)
-        reconstructed_img = self.decoder(encoded_repr)
+        encoded_repr, latent_cat = self.encoder(img)
+        reconstructed_img = self.decoder([encoded_repr,latent_cat])
 
         # The discriminator determines validity of the encoding
 
         validity = self.discriminator(encoded_repr)
+        validity_cat = self.discriminator_cat(latent_cat)
         # For the adversarial_autoencoder model we will only train the generator
         self.discriminator.trainable = False
+        self.discriminator_cat.trainable = False
         # The adversarial_autoencoder model  (stacked generator and discriminator)
         with tf.device('/gpu:0'):
-            self.adversarial_autoencoder = Model([img], [reconstructed_img, validity])
+            self.adversarial_autoencoder = Model([img], [reconstructed_img, validity, validity_cat])
 
         # try using multi_gpu
         #try:
@@ -92,8 +94,8 @@ class AdversarialAutoencoder():
         #except:
         #    print("Training autoencoder on singe GPU or CPU")
 
-        self.adversarial_autoencoder.compile(loss=['mse', 'binary_crossentropy'],
-            loss_weights=[1000, 1e-2],
+        self.adversarial_autoencoder.compile(loss=['mse', 'binary_crossentropy', 'binary_crossentropy'],
+            loss_weights=[1000, 1e-2, 1e-2],
             optimizer=optimizerA)
     #    print("Autoencoder metrics {}".format(self.adversarial_autoencoder.metrics_names))
 
@@ -177,58 +179,6 @@ class AdversarialAutoencoder():
         gener.summary()
         return gener
 
-        decoder = Sequential(name="decoder")
-        h = 5
-
-        decoder.add(Dense(units * 4 * 4 , use_bias=True, input_dim=self.latent_dim + self.latent_catdim, kernel_regularizer=reg()))
-        # check channel order on below
-        #decoder.add(BatchNormalization())
-        decoder.add(Reshape((4,4,units)))
-        # decoder.add(SpatialDropout2D(dropout))
-        #decoder.add(LeakyReLU(0.2))
-        decoder.add(PReLU())
-        decoder.add(Conv2D(units // 2, (h, h), activation='linear', use_bias=True, padding='same', kernel_regularizer=reg()))
-        # decoder.add(SpatialDropout2D(dropout))
-        #decoder.add(LeakyReLU(0.2))
-        #decoder.add(BatchNormalization())
-        decoder.add(PReLU())
-        decoder.add(UpSampling2D(size=(2, 2)))
-        decoder.add(Conv2D(units // 4, (h, h), activation='linear', use_bias=True, padding='same', kernel_regularizer=reg()))
-        # decoder.add(SpatialDropout2D(dropout))
-        #decoder.add(LeakyReLU(0.2))
-        #decoder.add(BatchNormalization())
-        decoder.add(PReLU())
-        decoder.add(UpSampling2D(size=(2, 2)))
-        decoder.add(Conv2D(units // 8, (h, h), activation='linear', use_bias=True, padding='same', kernel_regularizer=reg()))
-        # decoder.add(SpatialDropout2D(dropout))
-        #decoder.add(LeakyReLU(0.2))
-        #decoder.add(BatchNormalization())
-        decoder.add(PReLU())
-        decoder.add(UpSampling2D(size=(2, 2)))
-        decoder.add(Conv2D( units // 16, (h, h), activation='linear', use_bias=True, padding='same', kernel_regularizer=reg()))
-        # add one more PReLU for fine scale detail?
-
-        # added another upsampling step to get to 64 x 64
-        #decoder.add(LeakyReLU(0.2))
-        #decoder.add(BatchNormalization())
-        decoder.add(PReLU())
-        decoder.add(UpSampling2D(size=(2, 2)))
-        decoder.add(Conv2D(3, (h, h), activation='sigmoid', use_bias=True, padding='same', kernel_regularizer=reg()))
-        #decoder.add(BatchNormalization())
-        #decoder.add(Activation('sigmoid'))
-
-        #decoder.summary()
-        # above assumes a particular output dimension, instead try below
-        #decoder.add(Dense(np.prod(self.img_shape), activation='sigmoid'))
-        #decoder.add(Reshape(self.img_shape))
-
-        decoder.summary()
-
-        z = Input(shape=(self.latent_dim,))
-        y = Input(shape=(self.latent_catdim,))
-        img = decoder([z,y])
-
-        return Model([z,y], img)
 
 
 
