@@ -293,7 +293,7 @@ class AdversarialAutoencoder():
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
                 self.sample_images(epoch)
-                self.sample_autoencoder(epoch, imgs,"images_aae")
+                self.sample_autoencoder(epoch, imgs, save_folder="images_aae_cat")
 
                     # plotting the metrics
                 plt.plot(d_loss_hist,linewidth=0.5)
@@ -303,33 +303,28 @@ class AdversarialAutoencoder():
                 plt.xlabel('Epoch')
                 plt.legend(['Dloss*100', 'Dacc*100','AEloss','AEmse*1k'], loc='center right')
                 plt.show()
-                plt.savefig("metrics_aae_img/aae_img_metrics.png")
+                plt.savefig("metrics_aae_img_cat/aae_img_metrics.png")
                 plt.close()
         #save params once done training
         self.save_model()
-        self.save_latentspace(Ximg_train,"z_img")
+        self.save_latentspace(Ximg_train,"z_img_cat")
 
     def sample_images(self, epoch):
         r, c = 4, 5
 
-        z = np.random.normal(size=(r*c, self.latent_dim))
-        gen_imgs = self.decoder.predict(z)
-        #gen_bpatchs = self.decoder_bathy.predict(z)
-        #gen_bpatchs_means = self.decoder_bathy_mean.predict(z)
-        #print("shape gen imgs {}".format(gen_imgs.shape))
-        #print("shape gen bpatch {}".format(gen_bpatchs.shape))
-        # where does this come from?
-        #gen_imgs = 0.5 * gen_imgs + 0.5
-
         fig, axs = plt.subplots(r, 2*c)
         cnt = 0
         for i in range(r):
+            z = np.random.normal(size(1,self.latent_dim))
             for j in range(c):
+                cat = np.zeros(1,c)
+                cat[j] = 1
+                gen_imgs = self.decoder.predict([z,cat])
                 axs[i,2*j].imshow(gen_imgs[cnt])
                 axs[i,2*j].axis('off')
                 axs[i,2*j+1].axis('off')
                 cnt += 1
-        fig.savefig("images_aae_generator/benthic_%d.png" % epoch)
+        fig.savefig("images_aae_generator_cat/benthic_%d.png" % epoch)
         plt.close()
 
     def sample_autoencoder(self, epoch,imgs, save_folder):
@@ -366,9 +361,9 @@ class AdversarialAutoencoder():
             open(options['file_arch'], 'w').write(json_string)
             model.save_weights(options['file_weight'])
 
-        save(self.encoder, "img_aae_encoder")
-        save(self.decoder, "img_aae_decoder")
-        save(self.discriminator, "img_aae_discriminator")
+        save(self.encoder, "img_aae_encoder_cat")
+        save(self.decoder, "img_aae_decoder_cat")
+        save(self.discriminator, "img_aae_discriminator_cat")
 
 
     def save_latentspace(self, inputdata, latent_name):
