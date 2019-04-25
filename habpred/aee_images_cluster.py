@@ -334,7 +334,7 @@ class AdversarialAutoencoder():
         # Select a random set of images
         #idx = np.random.randint(0, X_train.shape[0], nsamps)
         #imgs = X_train[idx]
-        gen_imgs, valids = self.adversarial_autoencoder.predict(imgs)
+        gen_imgs, valids, valids_cat = self.adversarial_autoencoder.predict(imgs)
 
         #gen_imgs = 0.5 * gen_imgs + 0.5
 
