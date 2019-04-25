@@ -293,7 +293,7 @@ class AdversarialAutoencoder():
             # If at save interval => save generated image samples
             if epoch % sample_interval == 0:
                 self.sample_images(epoch)
-                self.sample_autoencoder(epoch, imgs, save_folder="images_aae_cat")
+                self.sample_autoencoder(epoch, imgs, save_folder="cat_images_aae")
 
                     # plotting the metrics
                 plt.plot(d_loss_hist,linewidth=0.5)
@@ -303,19 +303,19 @@ class AdversarialAutoencoder():
                 plt.xlabel('Epoch')
                 plt.legend(['Dloss*100', 'Dacc*100','AEloss','AEmse*1k'], loc='center right')
                 plt.show()
-                plt.savefig("metrics_aae_img_cat/aae_img_metrics.png")
+                plt.savefig("cat_metrics_aae_img/aae_img_metrics.png")
                 plt.close()
         #save params once done training
         self.save_model()
         self.save_latentspace(Ximg_train,"z_img_cat")
 
     def sample_images(self, epoch):
-        r, c = 4, 5
-
+        r = 4
+        c = self.latent_catdim
         fig, axs = plt.subplots(r, 2*c)
         cnt = 0
         for i in range(r):
-            z = np.random.normal(size(1,self.latent_dim))
+            z = np.random.normal(size=(1,self.latent_dim))
             for j in range(c):
                 cat = np.zeros(1,c)
                 cat[j] = 1
@@ -324,7 +324,7 @@ class AdversarialAutoencoder():
                 axs[i,2*j].axis('off')
                 axs[i,2*j+1].axis('off')
                 cnt += 1
-        fig.savefig("images_aae_generator_cat/benthic_%d.png" % epoch)
+        fig.savefig("cat_images_aae_generator/benthic_%d.png" % epoch)
         plt.close()
 
     def sample_autoencoder(self, epoch,imgs, save_folder):
