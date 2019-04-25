@@ -320,7 +320,7 @@ class AdversarialAutoencoder():
                 cat = np.zeros((1,c))
                 cat[0,j] = 1
                 gen_imgs = self.decoder.predict([z,cat])
-                axs[i,2*j].imshow(gen_imgs)
+                axs[i,2*j].imshow(gen_imgs[0])
                 axs[i,2*j].axis('off')
                 axs[i,2*j+1].axis('off')
                 cnt += 1
