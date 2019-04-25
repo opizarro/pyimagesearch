@@ -171,10 +171,10 @@ class AdversarialAutoencoder():
         # Conv 5: 64x64x3
         generator = Conv2DTranspose(3, kernel_size=5, strides=2, padding='same', activation='tanh')(generator)
 
-        generator.summary()
+
         # generator = Model(inputs=[z, labels], outputs=out_g)
         gener = Model(inputs=[z, y], outputs=generator, name='generator')
-
+        gener.summary()
         return gener
 
         decoder = Sequential(name="decoder")
