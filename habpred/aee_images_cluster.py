@@ -40,6 +40,7 @@ class AdversarialAutoencoder():
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 32
+        self.latent_catdim = 5
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
         optimizerA = Adam(lr=1e-4, decay=1e-6)
@@ -121,15 +122,17 @@ class AdversarialAutoencoder():
         # z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
         z = Lambda(lambda ml: ml[0] + K.random_normal(K.shape(ml[0])) * K.exp(ml[1] / 2),
                    output_shape=lambda ml: ml[0])([mu, log_sigma_sq])
+        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="sigmoid", kernel_regularizer=reg())(h)
 
-        return Model(x, z, name="encoder")
+
+        return Model(x, [z,y], name="encoder")
 
 
     def model_generator(self, units=512, dropout=0.5, reg=lambda: regularizers.l1_l2(l1=1e-7, l2=1e-7)):
         decoder = Sequential(name="decoder")
         h = 5
 
-        decoder.add(Dense(units * 4 * 4 , use_bias=True, input_dim=self.latent_dim, kernel_regularizer=reg()))
+        decoder.add(Dense(units * 4 * 4 , use_bias=True, input_dim=self.latent_dim + self.latent_catdim, kernel_regularizer=reg()))
         # check channel order on below
         #decoder.add(BatchNormalization())
         decoder.add(Reshape((4,4,units)))
@@ -174,9 +177,10 @@ class AdversarialAutoencoder():
         decoder.summary()
 
         z = Input(shape=(self.latent_dim,))
-        img = decoder(z)
+        y = Input(shape=(self.latent_catdim),)
+        img = decoder([z,y])
 
-        return Model(z, img)
+        return Model([z,y], img)
 
 
     def model_discriminator(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
@@ -196,6 +200,22 @@ class AdversarialAutoencoder():
         #y = Activation('sigmoid')(h)
         return Model(z, y)
 
+    def model_discriminator_cat(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
+        z = Input(shape=(self.latent_catdim,))
+        h = z
+        h = Dense(units, name="discriminator_h1", use_bias=True, kernel_regularizer=reg())(h)
+        # h = BatchNormalization()(h)
+        h = PReLU()(h)
+        h = Dense(units // 2, name="discriminator_h2", use_bias=True, kernel_regularizer=reg())(h)
+        # h = BatchNormalization()(h)
+        h = PReLU()(h)
+        h = Dense(units // 2, name="discriminator_h3", use_bias=True, kernel_regularizer=reg())(h)
+        # h = BatchNormalization()(h)
+        h = PReLU()(h)
+        y = Dense(output_dim, name="discriminator_y", use_bias=True, activation="sigmoid", kernel_regularizer=reg())(h)
+        # h = BatchNormalization()(h)
+        # y = Activation('sigmoid')(h)
+        return Model(z, y)
 
     def train(self, epochs, batch_size=128, sample_interval=50):
 
@@ -234,12 +254,21 @@ class AdversarialAutoencoder():
 
 
             #print("shape imgs {}".format(imgs.shape))
-            latent_fake = self.encoder.predict([imgs])
+            latent_fake, latent_fake_cat = self.encoder.predict([imgs])
             latent_real = np.random.normal(size=(desc_batch, self.latent_dim))
                 # Train the discriminator
             d_loss_real = self.discriminator.train_on_batch(latent_real, np.ones((desc_batch, 1)))
             d_loss_fake = self.discriminator.train_on_batch(latent_fake, np.zeros((desc_batch, 1)))
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
+
+            sampled_labels = np.random.randint(0, self.latent_catdim, desc_batch).reshape(-1, 1)
+            latent_real_cat = to_categorical(sampled_labels, num_classes=self.latent_catdim)
+
+            # Train the discriminator
+            d_loss_real_cat = self.discriminator_cat.train_on_batch(latent_real_cat, np.ones((desc_batch, 1)))
+            d_loss_fake_cat = self.discriminator_cat.train_on_batch(latent_fake_cat, np.zeros((desc_batch, 1)))
+            d_loss = 0.5 * np.add(d_loss_real_cat, d_loss_fake_cat) + d_loss
+
 
             # ---------------------
             #  Train Generator
