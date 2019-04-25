@@ -10,7 +10,7 @@ from keras.layers import Input, Dense, Reshape, Flatten, Dropout, multiply, Gaus
 from keras.layers import BatchNormalization, Activation, Embedding, ZeroPadding2D, Cropping2D
 from keras.layers import Concatenate, MaxPooling2D, merge
 from keras.layers.advanced_activations import LeakyReLU, PReLU
-from keras.layers.convolutional import UpSampling2D, Conv2D
+from keras.layers.convolutional import UpSampling2D, Conv2D, Conv2DTranspose
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras import losses
@@ -132,7 +132,51 @@ class AdversarialAutoencoder():
         return Model(x, [z,y], name="encoder")
 
 
-    def model_generator(self, units=512, dropout=0.5, reg=lambda: regularizers.l1_l2(l1=1e-7, l2=1e-7)):
+    def model_generator(self, units=512):
+
+        # latent space dimension
+        z = Input(shape=(self.latent_dim,))
+        y = Input(shape=(self.latent_catdim,))
+
+
+        # Generator network
+        merged_layer = Concatenate()([z, y])
+
+        # FC: 2x2x512
+        generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+        generator = Reshape((2, 2, 512))(generator)
+
+        # # Conv 1: 4x4x256
+        generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+
+        # Conv 2: 8x8x128
+        generator = Conv2DTranspose(128, kernel_size=5, strides=2, padding='same')(generator)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+
+        # Conv 3: 16x16x64
+        generator = Conv2DTranspose(64, kernel_size=5, strides=2, padding='same')(generator)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+
+        # Conv 4: 32x32x32
+        generator = Conv2DTranspose(32, kernel_size=5, strides=2, padding='same')(generator)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+
+        # Conv 5: 64x64x3
+        generator = Conv2DTranspose(3, kernel_size=5, strides=2, padding='same', activation='tanh')(generator)
+
+        generator.summary()
+        # generator = Model(inputs=[z, labels], outputs=out_g)
+        gener = Model(inputs=[z, y], outputs=generator, name='generator')
+
+        return gener
+
         decoder = Sequential(name="decoder")
         h = 5
 
@@ -185,6 +229,9 @@ class AdversarialAutoencoder():
         img = decoder([z,y])
 
         return Model([z,y], img)
+
+
+
 
 
     def model_discriminator(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
