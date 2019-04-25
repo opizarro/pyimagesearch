@@ -280,7 +280,7 @@ class AdversarialAutoencoder():
             imgs = Ximg_train[idx]
 
             # Train the generator
-            g_loss = self.adversarial_autoencoder.train_on_batch(imgs, [imgs, np.ones((batch_size, 1))])
+            g_loss = self.adversarial_autoencoder.train_on_batch(imgs, [imgs, np.ones((batch_size, 1)), np.ones((batch_size, 1))])
             # Train the generator
 
             # Plot the progress
