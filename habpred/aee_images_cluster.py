@@ -177,7 +177,7 @@ class AdversarialAutoencoder():
         decoder.summary()
 
         z = Input(shape=(self.latent_dim,))
-        y = Input(shape=(self.latent_catdim),)
+        y = Input(shape=(self.latent_catdim,))
         img = decoder([z,y])
 
         return Model([z,y], img)
