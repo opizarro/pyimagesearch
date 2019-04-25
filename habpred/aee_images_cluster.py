@@ -48,6 +48,7 @@ class AdversarialAutoencoder():
         #self.discriminator = self.build_discriminator()
         with tf.device('/gpu:0'):
             self.discriminator = self.model_discriminator()
+            self.discriminator_cat = self.model_discriminator_cat()
         # try using multi_gpu
         #try:
         #self.discriminator = multi_gpu_model(self.discriminator, cpu_relocation=True)
@@ -57,6 +58,9 @@ class AdversarialAutoencoder():
 
 
         self.discriminator.compile(loss='binary_crossentropy',
+            optimizer=optimizerD,
+            metrics=['accuracy'])
+        self.discriminator_cat.compile(loss='binary_crossentropy',
             optimizer=optimizerD,
             metrics=['accuracy'])
 
