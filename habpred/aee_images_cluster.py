@@ -318,7 +318,7 @@ class AdversarialAutoencoder():
             z = np.random.normal(size=(1,self.latent_dim))
             for j in range(c):
                 cat = np.zeros((1,c))
-                cat[j] = 1
+                cat[0,j] = 1
                 gen_imgs = self.decoder.predict([z,cat])
                 axs[i,2*j].imshow(gen_imgs[cnt])
                 axs[i,2*j].axis('off')
