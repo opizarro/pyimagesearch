@@ -39,7 +39,7 @@ class AdversarialAutoencoder():
         self.img_cols = 64
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 32
+        self.latent_dim = 64
         self.latent_catdim = 5
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
@@ -95,7 +95,7 @@ class AdversarialAutoencoder():
         #    print("Training autoencoder on singe GPU or CPU")
 
         self.adversarial_autoencoder.compile(loss=['mse', 'binary_crossentropy', 'binary_crossentropy'],
-            loss_weights=[1000, 1e-2, 1e-2],
+            loss_weights=[100, 1e-2, 1e-2],
             optimizer=optimizerA)
     #    print("Autoencoder metrics {}".format(self.adversarial_autoencoder.metrics_names))
 
@@ -201,7 +201,7 @@ class AdversarialAutoencoder():
         #y = Activation('sigmoid')(h)
         return Model(z, y)
 
-    def model_discriminator_cat(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
+    def model_discriminator_cat(self, output_dim=1, units=128, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
         z = Input(shape=(self.latent_catdim,))
         h = z
         h = Dense(units, name="discriminator_h1", use_bias=True, kernel_regularizer=reg())(h)
@@ -319,6 +319,7 @@ class AdversarialAutoencoder():
             for j in range(c):
                 cat = np.zeros((1,c))
                 cat[0,j] = 1
+                print("col {} cat {}".format(j,cat))
                 gen_imgs = self.decoder.predict([z,cat])
                 axs[i,2*j].imshow(gen_imgs[0])
                 axs[i,2*j].axis('off')
