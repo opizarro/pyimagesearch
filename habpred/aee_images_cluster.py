@@ -141,23 +141,13 @@ class AdversarialAutoencoder():
         y = Input(shape=(self.latent_catdim,))
 
         # FC: preprocess latent inage data
-        zgenerator = Dense(units//4, activation='relu')(z)
-        zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
-        zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
-
-        zgenerator = Dense(units//4, activation='relu')(z)
-        zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
-        zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
+        zgenerator = Dense(units//4, activation='linear')(z)
+        zgenerator = PReLU(zgenerator)
 
 
         # FC: preprocess categorical data
-        ygenerator = Dense(units//4, activation='relu')(y)
-        ygenerator = BatchNormalization(momentum=0.9)(ygenerator)
-        ygenerator = LeakyReLU(alpha=0.1)(ygenerator)
-
-        ygenerator = Dense(units//4, activation='relu')(y)
-        ygenerator = BatchNormalization(momentum=0.9)(ygenerator)
-        ygenerator = LeakyReLU(alpha=0.1)(ygenerator)
+        ygenerator = Dense(units//4, activation='linear')(y)
+        ygenerator = PReLU()(ygenerator)
 
 
         # Generator network
