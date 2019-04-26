@@ -142,13 +142,11 @@ class AdversarialAutoencoder():
 
         # FC: preprocess latent inage data
         zgenerator = Dense(units//4, activation='linear')(z)
-        zgenerator = PReLU(zgenerator)
-
+        zgenerator = PReLU()(zgenerator)
 
         # FC: preprocess categorical data
         ygenerator = Dense(units//4, activation='linear')(y)
         ygenerator = PReLU()(ygenerator)
-
 
         # Generator network
         merged_layer = Concatenate()([zgenerator, ygenerator])
@@ -187,10 +185,6 @@ class AdversarialAutoencoder():
         gener = Model(inputs=[z, y], outputs=generator, name='generator')
         gener.summary()
         return gener
-
-
-
-
 
 
     def model_discriminator(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
