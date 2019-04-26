@@ -39,7 +39,7 @@ class AdversarialAutoencoder():
         self.img_cols = 64
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 64
+        self.latent_dim = 128
         self.latent_catdim = 8
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
