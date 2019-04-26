@@ -140,9 +140,28 @@ class AdversarialAutoencoder():
         z = Input(shape=(self.latent_dim,))
         y = Input(shape=(self.latent_catdim,))
 
+        # FC:
+        zgenerator = Dense(units//4, activation='relu')(z)
+        zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
+        zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
+
+        zgenerator = Dense(units,//4 activation='relu')(z)
+        zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
+        zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
+
+
+        # FC: 2x2x512
+        ygenerator = Dense(units//4, activation='relu')(y)
+        ygenerator = BatchNormalization(momentum=0.9)(ygenerator)
+        ygenerator = LeakyReLU(alpha=0.1)(ygenerator)
+
+        ygenerator = Dense(units//4, activation='relu')(y)
+        ygenerator = BatchNormalization(momentum=0.9)(ygenerator)
+        ygenerator = LeakyReLU(alpha=0.1)(ygenerator)
+
 
         # Generator network
-        merged_layer = Concatenate()([z, y])
+        merged_layer = Concatenate()([zgenerator, ygenerator])
 
         # FC: 2x2x512
         generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
