@@ -128,7 +128,7 @@ class AdversarialAutoencoder():
         # z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
         z = Lambda(lambda ml: ml[0] + K.random_normal(K.shape(ml[0])) * K.exp(ml[1] / 2),
                    output_shape=lambda ml: ml[0])([mu, log_sigma_sq])
-        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="sigmoid", kernel_regularizer=reg())(h)
+        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(h)
 
 
         return Model(x, [z,y], name="encoder")
@@ -265,7 +265,7 @@ class AdversarialAutoencoder():
             sampled_labels = np.random.randint(0, self.latent_catdim, desc_batch).reshape(-1, 1)
             latent_real_cat = to_categorical(sampled_labels, num_classes=self.latent_catdim)
 
-            # Train the discriminator
+            # Train the discriminator cat
             d_loss_real_cat = self.discriminator_cat.train_on_batch(latent_real_cat, np.ones((desc_batch, 1)))
             d_loss_fake_cat = self.discriminator_cat.train_on_batch(latent_fake_cat, np.zeros((desc_batch, 1)))
             d_loss = 0.5 * np.add(d_loss_real_cat, d_loss_fake_cat) + d_loss
