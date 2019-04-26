@@ -334,7 +334,7 @@ class AdversarialAutoencoder():
                 axs[i,2*j].axis('off')
                 axs[i,2*j+1].axis('off')
                 cnt += 1
-        fig.savefig("cat_images_aae_generator/benthic_%d.png" % epoch, dpi=200)
+        fig.savefig("cat_images_aae_generator/benthic_%d.png" % epoch, dpi=150)
         plt.close()
 
     def sample_autoencoder(self, epoch,imgs, save_folder):
