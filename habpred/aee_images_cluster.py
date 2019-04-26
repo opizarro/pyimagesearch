@@ -141,15 +141,15 @@ class AdversarialAutoencoder():
         y = Input(shape=(self.latent_catdim,))
 
         # FC: preprocess latent inage data
-        zgenerator = Dense(units//4, activation='linear')(z)
-        zgenerator = PReLU()(zgenerator)
+      #  zgenerator = Dense(units//4, activation='linear')(z)
+      #  zgenerator = PReLU()(zgenerator)
 
         # FC: preprocess categorical data
         ygenerator = Dense(units//4, activation='linear')(y)
         ygenerator = PReLU()(ygenerator)
 
         # Generator network
-        merged_layer = Concatenate()([zgenerator, ygenerator])
+        merged_layer = Concatenate()([z, ygenerator])
 
         # FC: 2x2x512
         generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
