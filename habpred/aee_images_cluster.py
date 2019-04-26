@@ -153,29 +153,28 @@ class AdversarialAutoencoder():
 
         # FC: 2x2x512
         generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
-        generator = BatchNormalization(momentum=0.9)(generator)
-        generator = LeakyReLU(alpha=0.1)(generator)
+        #generator = BatchNormalization(momentum=0.9)(generator)
+        generator = PReLU()(generator)
         generator = Reshape((2, 2, 512))(generator)
 
         # # Conv 1: 4x4x256
         generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
-        generator = BatchNormalization(momentum=0.9)(generator)
-        generator = LeakyReLU(alpha=0.1)(generator)
+        generator = PReLU()(generator)
 
         # Conv 2: 8x8x128
         generator = Conv2DTranspose(128, kernel_size=5, strides=2, padding='same')(generator)
-        generator = BatchNormalization(momentum=0.9)(generator)
-        generator = LeakyReLU(alpha=0.1)(generator)
+        #generator = BatchNormalization(momentum=0.9)(generator)
+        generator = PReLU()(generator)
 
         # Conv 3: 16x16x64
         generator = Conv2DTranspose(64, kernel_size=5, strides=2, padding='same')(generator)
-        generator = BatchNormalization(momentum=0.9)(generator)
-        generator = LeakyReLU(alpha=0.1)(generator)
+        #generator = BatchNormalization(momentum=0.9)(generator)
+        generator = PReLU()(generator)
 
         # Conv 4: 32x32x32
         generator = Conv2DTranspose(32, kernel_size=5, strides=2, padding='same')(generator)
-        generator = BatchNormalization(momentum=0.9)(generator)
-        generator = LeakyReLU(alpha=0.1)(generator)
+        #generator = BatchNormalization(momentum=0.9)(generator)
+        generator = PReLU()(generator)
 
         # Conv 5: 64x64x3
         generator = Conv2DTranspose(3, kernel_size=5, strides=2, padding='same', activation='tanh')(generator)
