@@ -303,7 +303,7 @@ class AdversarialAutoencoder():
             # Train the generator
 
             # Plot the progress
-            print ("imgs %d [D loss: %f, acc: %.2f%%] [Dcat loss: %f, acc: %.2f%%] [G loss: %f, mse: %f]" % (epoch, d_loss[0], 100*d_loss[1], d_loss_cat[0], 100*dloss_cat[1], g_loss[0], g_loss[1]))
+            print ("imgs %d [D loss: %f, acc: %.2f%%] [Dcat loss: %f, acc: %.2f%%] [G loss: %f, mse: %f]" % (epoch, d_loss[0], 100*d_loss[1], d_loss_cat[0], 100*d_loss_cat[1], g_loss[0], g_loss[1]))
 
 
             d_loss_hist.append(d_loss*100)
