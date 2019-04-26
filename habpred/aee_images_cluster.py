@@ -145,7 +145,7 @@ class AdversarialAutoencoder():
         zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
         zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
 
-        zgenerator = Dense(units//4 activation='relu')(z)
+        zgenerator = Dense(units//4, activation='relu')(z)
         zgenerator = BatchNormalization(momentum=0.9)(zgenerator)
         zgenerator = LeakyReLU(alpha=0.1)(zgenerator)
 
