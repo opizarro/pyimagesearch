@@ -287,7 +287,7 @@ class AdversarialAutoencoder():
             # Train the discriminator cat
             d_loss_real_cat = self.discriminator_cat.train_on_batch(latent_real_cat, np.ones((desc_batch, 1)))
             d_loss_fake_cat = self.discriminator_cat.train_on_batch(latent_fake_cat, np.zeros((desc_batch, 1)))
-            d_loss = 0.5 * np.add(d_loss_real_cat, d_loss_fake_cat) + d_loss
+            d_loss_cat = 0.5 * np.add(d_loss_real_cat, d_loss_fake_cat)
 
 
             # ---------------------
@@ -303,7 +303,7 @@ class AdversarialAutoencoder():
             # Train the generator
 
             # Plot the progress
-            print ("imgs %d [D loss: %f, acc: %.2f%%] [G loss: %f, mse: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss[0], g_loss[1]))
+            print ("imgs %d [D loss: %f, acc: %.2f%%] [Dcat loss: %f, acc: %.2f%%] [G loss: %f, mse: %f]" % (epoch, d_loss[0], 100*d_loss[1], d_loss_cat[0], 100*dloss_cat[1], g_loss[0], g_loss[1]))
 
 
             d_loss_hist.append(d_loss*100)
