@@ -367,7 +367,7 @@ class AdversarialAutoencoder():
                 axs[i,2*j+1].imshow(gen_imgs[cnt])
                 axs[i,2*j+1].axis('off')
                 cnt += 1
-        fig.savefig(save_folder+"/benthic_%d.png" % epoch)
+        fig.savefig(save_folder+"/benthic_%d.png" % epoch, dpi=300)
         plt.close()
 
     def save_model(self):
