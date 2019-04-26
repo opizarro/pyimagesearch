@@ -40,7 +40,7 @@ class AdversarialAutoencoder():
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 64
-        self.latent_catdim = 5
+        self.latent_catdim = 8
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
         optimizerA = Adam(lr=1e-4, decay=1e-6)
@@ -95,7 +95,7 @@ class AdversarialAutoencoder():
         #    print("Training autoencoder on singe GPU or CPU")
 
         self.adversarial_autoencoder.compile(loss=['mse', 'binary_crossentropy', 'binary_crossentropy'],
-            loss_weights=[100, 1e-2, 1e-2],
+            loss_weights=[1000, 1e-2, 1e-2],
             optimizer=optimizerA)
     #    print("Autoencoder metrics {}".format(self.adversarial_autoencoder.metrics_names))
 
@@ -329,7 +329,7 @@ class AdversarialAutoencoder():
         self.save_latentspace(Ximg_train,"z_img_cat")
 
     def sample_images(self, epoch):
-        r = 4
+        r = 10
         c = self.latent_catdim
         fig, axs = plt.subplots(r, 2*c)
         cnt = 0
