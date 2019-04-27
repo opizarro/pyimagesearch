@@ -39,8 +39,8 @@ class AdversarialAutoencoder():
         self.img_cols = 64
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 128
-        self.latent_catdim = 8
+        self.latent_dim = 256
+        self.latent_catdim = 5
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
         optimizerA = Adam(lr=1e-4, decay=1e-6)
@@ -141,14 +141,14 @@ class AdversarialAutoencoder():
         y = Input(shape=(self.latent_catdim,))
 
         # FC: preprocess latent inage data
-        zgenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(z)
+        #zgenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(z)
 
         # FC: preprocess categorical data
-        ygenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(y)
+        ygenerator = Dense(self.latent_dim, activation='linear')(y)
 
 
         # Generator network
-        merged_layer = Multiply()([zgenerator, ygenerator])
+        merged_layer = Multiply()([z, ygenerator])
 
         # FC: 2x2x512
         generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
