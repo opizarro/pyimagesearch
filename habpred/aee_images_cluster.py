@@ -128,8 +128,8 @@ class AdversarialAutoencoder():
         # z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
         z = Lambda(lambda ml: ml[0] + K.random_normal(K.shape(ml[0])) * K.exp(ml[1] / 2),
                    output_shape=lambda ml: ml[0])([mu, log_sigma_sq])
-        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(h)
-
+        y1 = Dense(self.latent_catdim, name="encoder_categories_int", use_bias=True, activation="ReLu", kernel_regularizer=reg())(h)
+        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(y1)
 
         return Model(x, [z,y], name="encoder")
 
@@ -144,19 +144,19 @@ class AdversarialAutoencoder():
         #zgenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(z)
 
         # FC: preprocess categorical data
-        ygenerator = Dense(2*2*units, activation='linear')(y)
+        #ygenerator = Dense(self.latent_dim, activation='linear')(y)
 
 
         # Generator network
-        #merged_layer = Multiply()([z, ygenerator])
+        merged_layer = Concatenate()([z, y])
 
         # FC: 2x2x512
-        generator = Dense(2 * 2 * units, activation='relu')(z)
+        generator = Dense(2 * 2 * units, activation='linear')(merged_layer)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
-        merged_layer = Multiply()([generator, ygenerator])
+        #merged_layer = Multiply()([generator, ygenerator])
 
-        generator = Reshape((2, 2, 512))(merged_layer)
+        generator = Reshape((2, 2, 512))(generator)
 
         # # Conv 1: 4x4x256
         generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
