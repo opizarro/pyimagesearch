@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 from keras.datasets import mnist
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout, multiply, GaussianNoise
 from keras.layers import BatchNormalization, Activation, Embedding, ZeroPadding2D, Cropping2D
-from keras.layers import Concatenate, MaxPooling2D, merge
+from keras.layers import Concatenate, Multiply, MaxPooling2D, merge
 from keras.layers.advanced_activations import LeakyReLU, PReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D, Conv2DTranspose
 from keras.models import Sequential, Model
@@ -141,15 +141,14 @@ class AdversarialAutoencoder():
         y = Input(shape=(self.latent_catdim,))
 
         # FC: preprocess latent inage data
-      #  zgenerator = Dense(units//4, activation='linear')(z)
-      #  zgenerator = PReLU()(zgenerator)
+        zgenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(z)
 
         # FC: preprocess categorical data
-        ygenerator = Dense(units//4, activation='linear')(y)
-        ygenerator = PReLU()(ygenerator)
+        ygenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(y)
+
 
         # Generator network
-        merged_layer = Concatenate()([z, ygenerator])
+        merged_layer = Multiply()([zgenerator, ygenerator])
 
         # FC: 2x2x512
         generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
