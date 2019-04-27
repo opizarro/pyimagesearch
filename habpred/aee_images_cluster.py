@@ -128,7 +128,8 @@ class AdversarialAutoencoder():
         # z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
         z = Lambda(lambda ml: ml[0] + K.random_normal(K.shape(ml[0])) * K.exp(ml[1] / 2),
                    output_shape=lambda ml: ml[0])([mu, log_sigma_sq])
-        y1 = Dense(self.latent_catdim, name="encoder_categories_int", use_bias=True, activation="ReLu", kernel_regularizer=reg())(h)
+        y1 = Dense(self.latent_dim, name="encoder_categories_int", use_bias=True, activation="linear", kernel_regularizer=reg())(h)
+        y1 = PReLU()(y1)
         y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(y1)
 
         return Model(x, [z,y], name="encoder")
