@@ -39,7 +39,7 @@ class AdversarialAutoencoder():
         self.img_cols = 64
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 256
+        self.latent_dim = 128
         self.latent_catdim = 5
 
         optimizerD = Adam(lr=1e-6, decay=1e-6)
@@ -144,17 +144,19 @@ class AdversarialAutoencoder():
         #zgenerator = Dense(self.latent_dim+self.latent_catdim, activation='linear')(z)
 
         # FC: preprocess categorical data
-        ygenerator = Dense(self.latent_dim, activation='linear')(y)
+        ygenerator = Dense(2*2*units, activation='linear')(y)
 
 
         # Generator network
-        merged_layer = Multiply()([z, ygenerator])
+        #merged_layer = Multiply()([z, ygenerator])
 
         # FC: 2x2x512
-        generator = Dense(2 * 2 * units, activation='relu')(merged_layer)
+        generator = Dense(2 * 2 * units, activation='relu')(z)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
-        generator = Reshape((2, 2, 512))(generator)
+        merged_layer = Multiply()([generator, ygenerator])
+
+        generator = Reshape((2, 2, 512))(merged_layer)
 
         # # Conv 1: 4x4x256
         generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
