@@ -128,9 +128,8 @@ class AdversarialAutoencoder():
         # z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
         z = Lambda(lambda ml: ml[0] + K.random_normal(K.shape(ml[0])) * K.exp(ml[1] / 2),
                    output_shape=lambda ml: ml[0])([mu, log_sigma_sq])
-        y1 = Dense(self.latent_dim, name="encoder_categories_int", use_bias=True, activation="linear", kernel_regularizer=reg())(h)
-        y1 = PReLU()(y1)
-        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(y1)
+
+        y = Dense(self.latent_catdim, name="encoder_categories", use_bias=True, activation="softmax", kernel_regularizer=reg())(h)
 
         return Model(x, [z,y], name="encoder")
 
@@ -157,24 +156,24 @@ class AdversarialAutoencoder():
         generator = PReLU()(generator)
         #merged_layer = Multiply()([generator, ygenerator])
 
-        generator = Reshape((2, 2, 512))(generator)
+        generator = Reshape((2, 2, units))(generator)
 
         # # Conv 1: 4x4x256
-        generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
+        generator = Conv2DTranspose(units//2, kernel_size=5, strides=2, padding='same')(generator)
         generator = PReLU()(generator)
 
         # Conv 2: 8x8x128
-        generator = Conv2DTranspose(128, kernel_size=5, strides=2, padding='same')(generator)
+        generator = Conv2DTranspose(units//4, kernel_size=5, strides=2, padding='same')(generator)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
 
         # Conv 3: 16x16x64
-        generator = Conv2DTranspose(64, kernel_size=5, strides=2, padding='same')(generator)
+        generator = Conv2DTranspose(units//8, kernel_size=5, strides=2, padding='same')(generator)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
 
         # Conv 4: 32x32x32
-        generator = Conv2DTranspose(32, kernel_size=5, strides=2, padding='same')(generator)
+        generator = Conv2DTranspose(units//16, kernel_size=5, strides=2, padding='same')(generator)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
 
@@ -205,7 +204,7 @@ class AdversarialAutoencoder():
         #y = Activation('sigmoid')(h)
         return Model(z, y)
 
-    def model_discriminator_cat(self, output_dim=1, units=128, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
+    def model_discriminator_cat(self, output_dim=1, units=512, reg=lambda: regularizers.l1_l2(1e-7, 1e-7)):
         z = Input(shape=(self.latent_catdim,))
         h = z
         h = Dense(units, name="discriminator_h1", use_bias=True, kernel_regularizer=reg())(h)
