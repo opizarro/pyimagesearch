@@ -321,8 +321,8 @@ class INFOCGAN():
         cnt = 0
         for i in range(r):
             for j in range(c):
-                labels = to_categorical(j, num_classes=self.num_classes)
-                gen_img = self.generator.predict([noise[i,:], labels],random_bathy[i],random_bathy_means[i])
+                labels = to_categorical([j], num_classes=self.num_classes)
+                gen_img = self.generator.predict(np.concatenate((noise[i,:], labels), axis=1),random_bathy[i,:,:],random_bathy_means[i])
                 axs[i,2*j].imshow(gen_img[cnt,::])
                 #print("random bathy subset  size ", random_bathy[cnt,:,:,0].shape)
                 axs[i,2*j+1].imshow(random_bathy[i,:,:,0])
