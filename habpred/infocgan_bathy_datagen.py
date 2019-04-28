@@ -76,7 +76,7 @@ class INFOCGAN():
         # The combined model  (stacked generator and discriminator)
         # Trains generator to fool discriminator
         self.combined = Model([noise, bathy, bathy_mean], [valid, target_label])
-        self.combined.compile(loss=['binary_crossentropy'],
+        self.combined.compile(loss=losses,
             optimizer=optimizer)
 
     def build_generator(self):
