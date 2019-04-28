@@ -71,7 +71,7 @@ class INFOCGAN():
         # and the label of that image
         valid = self.discriminator([img, bathy, bathy_mean])
         # The recognition network produces the label
-        target_label = self.auxilliary([img, bathy, bathy_mean])
+        target_label = self.auxiliary([img, bathy, bathy_mean])
 
         # The combined model  (stacked generator and discriminator)
         # Trains generator to fool discriminator
