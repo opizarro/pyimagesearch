@@ -338,4 +338,4 @@ class INFOCGAN():
 
 if __name__ == '__main__':
     infocgan = INFOCGAN()
-    cgan.train(epochs=100000, batch_size=32, sample_interval=200)
+    infocgan.train(epochs=100000, batch_size=32, sample_interval=200)
