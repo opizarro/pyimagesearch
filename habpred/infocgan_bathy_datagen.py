@@ -303,7 +303,7 @@ class INFOCGAN():
     def sample_images(self, epoch, Xbathy_samples, Xbathy_samples_means):
         # save sample images to disk
         r, c = 4, self.num_classes
-        noise = np.random.normal(0, 1, r, self.latent_dim-c))
+        noise = np.random.normal(0, 1, (r, self.latent_dim-c))
         #for k in range(c):
         #    labels = to_categorical(np.full(fill_value=k, shape=(r,1)), num_classes=self.num_classes)
 
@@ -316,13 +316,13 @@ class INFOCGAN():
 
         # Rescale images 0 - 1
         #gen_imgs = 0.5 * gen_imgs + 0.5
-        print("img size ",gen_imgs.shape )
+        #print("img size ",gen_imgs.shape )
         fig, axs = plt.subplots(r, 2*c)
         cnt = 0
         for i in range(r):
             for j in range(c):
                 labels = to_categorical(j, num_classes=self.num_classes)
-                gen_img = self.generator.predict([noise(i,:), labels],random_bathy[i],random_bathy_means[i])
+                gen_img = self.generator.predict([noise[i,:], labels],random_bathy[i],random_bathy_means[i])
                 axs[i,2*j].imshow(gen_img[cnt,::])
                 #print("random bathy subset  size ", random_bathy[cnt,:,:,0].shape)
                 axs[i,2*j+1].imshow(random_bathy[i,:,:,0])
