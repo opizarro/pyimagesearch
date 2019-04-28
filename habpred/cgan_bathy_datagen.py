@@ -152,7 +152,7 @@ class CGAN():
         discriminator = Flatten()(discriminator)
 
         # Concatenate
-        merged_layer = Concatenate()([discriminator, bvec])
+        merged_layer = Concatenate()([discriminator, bvec, bathy_mean])
         discriminator = Dense(512, activation='relu')(merged_layer)
 
         # Output
@@ -260,10 +260,11 @@ class CGAN():
                 plt.xlabel('Epoch')
                 plt.legend(['Discriminator', 'Adversarial'], loc='best')
                 plt.show()
-                plt.savefig("metrics_cgan/metrics.png")
+                plt.savefig("metrics_icgan/metrics.png")
                 plt.close()
 
     def sample_images(self, epoch, Xbathy_samples, Xbathy_samples_means):
+        # save sample images to disk
         r, c = 2, 3
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
         noise = np.random.uniform(-1, 1, (r * c, self.latent_dim))
@@ -293,7 +294,7 @@ class CGAN():
                 axs[i,2*j].axis('off')
                 axs[i,2*j+1].axis('off')
                 cnt += 1
-        fig.savefig("images_cgan/%d.png" % epoch)
+        fig.savefig("images_icgan/%d.png" % epoch)
         plt.close()
 
 
