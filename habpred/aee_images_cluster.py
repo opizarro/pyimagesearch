@@ -154,6 +154,11 @@ class AdversarialAutoencoder():
         generator = Dense(2 * 2 * units, activation='linear')(merged_layer)
         #generator = BatchNormalization(momentum=0.9)(generator)
         generator = PReLU()(generator)
+
+        generator = Dense(2 * 2 * units, activation='linear')(generator)
+        # generator = BatchNormalization(momentum=0.9)(generator)
+        generator = PReLU()(generator)
+
         #merged_layer = Multiply()([generator, ygenerator])
 
         generator = Reshape((2, 2, units))(generator)
