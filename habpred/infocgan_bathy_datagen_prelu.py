@@ -211,23 +211,23 @@ class INFOCGAN():
         # cached bathymetry
         cached_bpatches = '/data/bathy_training/cache_raw_bpatches_ohara_07.npz'
         all_bpatches = '/data/bathy_training/all_raw_bpatches_ohara_07.npz'
-        # load dataset
+        # load dataset images and corresponding bathy patches
         data =  np.load(cached_images)
         Ximg_train = data['xtrain']
         data = np.load(cached_bpatches)
         Xbathy_train = data['xtrain']
         Xbathy_train_means = np.mean(Xbathy_train,axis=(1,2))
         print("shape Xbathy_train_means ", Xbathy_train_means.shape)
-
         for k in np.arange(Xbathy_train.shape[0]):
             Xbathy_train[k,:,:,0] = Xbathy_train[k,:,:,0] - Xbathy_train_means[k]
-
+        Xcoords_train = data['xtrain_coords']
+        # load all bathy patches
         data = np.load(all_bpatches)
         Xbathy_all = data['xtrain']
         Xbathy_all_means = np.mean(Xbathy_all,axis=(1,2))
         for k in np.arange(Xbathy_all.shape[0]):
             Xbathy_all[k,:,:,0] = Xbathy_all[k,:,:,0] - Xbathy_all_means[k]
-
+        Xcoords_all = data['xtrain_coords']
         # Configure input
 #        X_train = (X_train.astype(np.float32) - 127.5) / 127.5
 #        X_train = np.expand_dims(X_train, axis=3)
@@ -382,6 +382,15 @@ class INFOCGAN():
 
 
         fig.savefig("images_icgan_fixed_bathy/fixed_bathy_%d.png" % epoch)
+        plt.close()
+
+    def sample_q_spatially(self,epoch, Ximg_samples, Xbathy_samples, Xbathy_samples_means, Xcoords):
+        label_pred = self.auxiliary.predict([Ximg_samples, Xbathy_samples, Xbathy_samples_means])
+        # max index per prediction
+        ml_label=np.argmax(label_pred,axis=1)
+        # plot with Xcoords and max index
+        plt.scatter(Xcoords[:,0],Xcoords[:,1],c=ml_label)
+        ig.savefig("spatial_icgan/spatial_%d.png" % epoch)
         plt.close()
 
 if __name__ == '__main__':
