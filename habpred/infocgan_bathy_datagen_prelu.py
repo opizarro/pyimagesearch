@@ -32,7 +32,7 @@ class INFOCGAN():
         self.bp_cols = 21
         self.bp_channels = 1
         self.bp_shape = (self.bp_rows, self.bp_cols, self.bp_channels)
-        self.latent_dim = 32
+        self.latent_dim = 28
         self.num_classes = 5
 
         #optimizer = Adam(0.0002, 0.5)
@@ -267,8 +267,8 @@ class INFOCGAN():
             gen_imgs = self.generator.predict([gen_input[:actual_batch_size], bpatches, bp_means])
 
             # Train the discriminator
-            d_loss_real = self.discriminator.train_on_batch([imgs, bpatches, bp_means], valid[:actual_batch_size]-np.abs(np.random.normal(0,0.1,(actual_batch_size,1))))
-            d_loss_fake = self.discriminator.train_on_batch([gen_imgs, bpatches, bp_means], fake[:actual_batch_size]+np.abs(np.random.normal(0,0.1,(actual_batch_size,1))))
+            d_loss_real = self.discriminator.train_on_batch([imgs, bpatches, bp_means], valid[:actual_batch_size]-np.abs(np.random.normal(0,0.05,(actual_batch_size,1))))
+            d_loss_fake = self.discriminator.train_on_batch([gen_imgs, bpatches, bp_means], fake[:actual_batch_size]+np.abs(np.random.normal(0,0.05,(actual_batch_size,1))))
             #d_loss_real = self.discriminator.train_on_batch([imgs, bpatches, bp_means], valid[:actual_batch_size])
             #d_loss_fake = self.discriminator.train_on_batch([gen_imgs, bpatches, bp_means], fake[:actual_batch_size])
 
@@ -280,7 +280,7 @@ class INFOCGAN():
 
             # Condition on labels
             # on the same batch used by the discriminator
-            g_loss = self.combined.train_on_batch([gen_input[:actual_batch_size], bpatches, bp_means], [valid[:actual_batch_size], sampled_labels[:actual_batch_size]])
+            #g_loss = self.combined.train_on_batch([gen_input[:actual_batch_size], bpatches, bp_means], [valid[:actual_batch_size], sampled_labels[:actual_batch_size]])
 
             # this is selecting random patches from a box around dive, presumably representative bathy
             idx = np.random.randint(0, Xbathy_all.shape[0], batch_size)
@@ -290,7 +290,7 @@ class INFOCGAN():
             sampled_noise, sampled_labels = self.sample_generator_input(batch_size)
             gen_input = np.concatenate((sampled_noise, sampled_labels), axis=1)
             # Train the generator
-            #g_loss2 = self.combined.train_on_batch([gen_input, random_bathy, random_bathy_means], [valid, sampled_labels])
+            g_loss = self.combined.train_on_batch([gen_input, random_bathy, random_bathy_means], [valid, sampled_labels])
 
 
 
