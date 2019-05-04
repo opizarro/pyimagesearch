@@ -303,6 +303,7 @@ class INFOCGAN():
             if epoch % sample_interval == 0:
                 self.sample_images(epoch, Xbathy_train, Xbathy_train_means)
                 self.sample_images_fixed_bathy(epoch, Xbathy_train, Xbathy_train_means)
+                self.sample_q_spatially(epoch,Ximg_train, Xbathy_train, Xbathy_train_means)
                 # plotting the metrics
                 plt.plot(d_loss_hist)
                 plt.plot(g_loss_hist)
