@@ -1,4 +1,9 @@
 # import necessary packages
+import sys
+# Add the home directory to sys.path
+pyis_dir = "/Users/opizarro/git"
+sys.path.append(pyis_dir)
+
 from affine import Affine
 from pyimagesearch.habpred.config import habpred_config as config
 from sklearn.model_selection import train_test_split
@@ -135,7 +140,7 @@ for (dType, Imgnames, outputPath) in datasets:
         # mean of each channel in the image, then update the
         # respective lists
 
-        image = sp.preprocess(image)
+        #image = sp.preprocess(image)
         writer.add([image], [bathy_patch], [(px,py)], [(x,y)])
 
         if dType == "train":
