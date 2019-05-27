@@ -1,8 +1,13 @@
 from __future__ import print_function, division
 
 import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"]="1"
+
+import sys
+# Add the home directory to sys.path
+pyis_dir = "/Users/opizarro/git"
+sys.path.append(pyis_dir)
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, LeakyReLU, BatchNormalization
@@ -16,25 +21,32 @@ from keras import initializers
 from keras import backend as K
 
 from pyimagesearch.preprocessing import ImageToArrayPreprocessor
-
+#from pyimagesearch.preprocessing import CropRotFlipPreprocessor
+from pyimagesearch.preprocessing import PatchPreprocessor
+from pyimagesearch.localio import HDF5DatasetGeneratorMulti
+from pyimagesearch.habpred.config import habpred_config as config
+# fix TrainingMonitor
+#from pyimagesearch.callbacks import TrainingMonitor
 
 import matplotlib as mpl
 mpl.use('Agg') # does use DISPLAY
 import matplotlib.pyplot as plt
 
 import numpy as np
+import random
+
 
 class CGAN():
     def __init__(self):
         # Input shape
-        self.img_rows = 64
-        self.img_cols = 64
+        self.img_rows = 128
+        self.img_cols = 128
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.bp_rows = 21
         self.bp_cols = 21
         self.bp_channels = 1
-        self.bp_shape = (self.bp_rows, self.bp_cols, self.bp_channels)
+        self.bp_shape = (self.bp_rows, self.bp_cols)
         self.latent_dim = 100
 
         #optimizer = Adam(0.0002, 0.5)
@@ -85,34 +97,39 @@ class CGAN():
         # Generator network
         merged_layer = Concatenate()([z, bvec, bathy_mean])
 
-        # FC: 2x2x512
-        generator = Dense(2*2*512, activation='relu')(merged_layer)
+        # FC: 2x2x1024
+        generator = Dense(2*2*1024, activation='relu')(merged_layer)
         generator = BatchNormalization(momentum=0.9)(generator)
         generator = LeakyReLU(alpha=0.1)(generator)
-        generator = Reshape((2, 2, 512))(generator)
+        generator = Reshape((2, 2, 1024))(generator)
 
-        # # Conv 1: 4x4x256
+        # # Conv 1: 4x4x512
+        generator = Conv2DTranspose(512, kernel_size=5, strides=2, padding='same')(generator)
+        generator = BatchNormalization(momentum=0.9)(generator)
+        generator = LeakyReLU(alpha=0.1)(generator)
+
+        # Conv 2: 8x8x256
         generator = Conv2DTranspose(256, kernel_size=5, strides=2, padding='same')(generator)
         generator = BatchNormalization(momentum=0.9)(generator)
         generator = LeakyReLU(alpha=0.1)(generator)
 
-        # Conv 2: 8x8x128
+        # Conv 3: 16x16x128
         generator = Conv2DTranspose(128, kernel_size=5, strides=2, padding='same')(generator)
         generator = BatchNormalization(momentum=0.9)(generator)
         generator = LeakyReLU(alpha=0.1)(generator)
 
-        # Conv 3: 16x16x64
+
+        # Conv 4: 32x32x64
         generator = Conv2DTranspose(64, kernel_size=5, strides=2, padding='same')(generator)
         generator = BatchNormalization(momentum=0.9)(generator)
         generator = LeakyReLU(alpha=0.1)(generator)
 
-
-        # Conv 4: 32x32x32
+        # Conv 5: 64x64x32
         generator = Conv2DTranspose(32, kernel_size=5, strides=2, padding='same')(generator)
         generator = BatchNormalization(momentum=0.9)(generator)
         generator = LeakyReLU(alpha=0.1)(generator)
 
-        # Conv 5: 64x64x3
+        # Conv 5: 128x128x3
         generator = Conv2DTranspose(3, kernel_size=5, strides=2, padding='same', activation='linear')(generator)
 
         # generator = Model(inputs=[z, labels], outputs=out_g)
@@ -131,23 +148,28 @@ class CGAN():
 
         bathy_mean = Input(shape=(1,))
 
-        # Conv 1: 16x16x64
+        # Conv 1: 64x64x64
         discriminator = Conv2D(64, kernel_size=5, strides=2, padding='same')(img_input)
         discriminator = BatchNormalization(momentum=0.9)(discriminator)
         discriminator = LeakyReLU(alpha=0.1)(discriminator)
 
-        # Conv 2:
+        # Conv 2: 32x32x
         discriminator = Conv2D(128, kernel_size=5, strides=2, padding='same')(discriminator)
         discriminator = BatchNormalization(momentum=0.9)(discriminator)
         discriminator = LeakyReLU(alpha=0.1)(discriminator)
 
-        # Conv 3:
+        # Conv 3: 16x16x
         discriminator = Conv2D(256, kernel_size=5, strides=2, padding='same')(discriminator)
         discriminator = BatchNormalization(momentum=0.9)(discriminator)
         discriminator = LeakyReLU(alpha=0.1)(discriminator)
 
-        # Conv 4:
+        # Conv 4: 8x8x
         discriminator = Conv2D(512, kernel_size=5, strides=2, padding='same')(discriminator)
+        discriminator = BatchNormalization(momentum=0.9)(discriminator)
+        discriminator = LeakyReLU(alpha=0.1)(discriminator)
+
+        # Conv 4: 4x4x
+        discriminator = Conv2D(1024, kernel_size=5, strides=2, padding='same')(discriminator)
         discriminator = BatchNormalization(momentum=0.9)(discriminator)
         discriminator = LeakyReLU(alpha=0.1)(discriminator)
 
@@ -169,26 +191,26 @@ class CGAN():
 
         # Load the dataset
 
-        cached_images = '/data/bathy_training/cache_images_ohara_07.npz'
-        # cached bathymetry
-        cached_bpatches = '/data/bathy_training/cache_raw_bpatches_ohara_07.npz'
-        all_bpatches = '/data/bathy_training/all_raw_bpatches_ohara_07.npz'
-        # load dataset
-        data =  np.load(cached_images)
-        Ximg_train = data['xtrain']
-        data = np.load(cached_bpatches)
-        Xbathy_train = data['xtrain']
-        Xbathy_train_means = np.mean(Xbathy_train,axis=(1,2))
-        print("shape Xbathy_train_means ", Xbathy_train_means.shape)
-
-        for k in np.arange(Xbathy_train.shape[0]):
-            Xbathy_train[k,:,:,0] = Xbathy_train[k,:,:,0] - Xbathy_train_means[k]
-
-        data = np.load(all_bpatches)
-        Xbathy_all = data['xtrain']
-        Xbathy_all_means = np.mean(Xbathy_all,axis=(1,2))
-        for k in np.arange(Xbathy_all.shape[0]):
-            Xbathy_all[k,:,:,0] = Xbathy_all[k,:,:,0] - Xbathy_all_means[k]
+        # cached_images = '/data/bathy_training/cache_images_ohara_07.npz'
+        # # cached bathymetry
+        # cached_bpatches = '/data/bathy_training/cache_raw_bpatches_ohara_07.npz'
+        # all_bpatches = '/data/bathy_training/all_raw_bpatches_ohara_07.npz'
+        # # load dataset
+        # data =  np.load(cached_images)
+        # Ximg_train = data['xtrain']
+        # data = np.load(cached_bpatches)
+        # Xbathy_train = data['xtrain']
+        # Xbathy_train_means = np.mean(Xbathy_train,axis=(1,2))
+        # print("shape Xbathy_train_means ", Xbathy_train_means.shape)
+        #
+        # for k in np.arange(Xbathy_train.shape[0]):
+        #     Xbathy_train[k,:,:,0] = Xbathy_train[k,:,:,0] - Xbathy_train_means[k]
+        #
+        # data = np.load(all_bpatches)
+        # Xbathy_all = data['xtrain']
+        # Xbathy_all_means = np.mean(Xbathy_all,axis=(1,2))
+        # for k in np.arange(Xbathy_all.shape[0]):
+        #     Xbathy_all[k,:,:,0] = Xbathy_all[k,:,:,0] - Xbathy_all_means[k]
 
         # Configure input
 #        X_train = (X_train.astype(np.float32) - 127.5) / 127.5
@@ -203,9 +225,23 @@ class CGAN():
         d_loss_hist = []
         g_loss_hist = []
 
+        # initialize image preprocessors
+        #crfp = CropRotFlipPreprocessor(128, 128, horiz=True, rots=True)
+        patchp = PatchPreprocessor(128,128)
+        iap = ImageToArrayPreprocessor()
+
+        # initialize the training and validation dataset generators
+        trainGen = HDF5DatasetGeneratorMulti(config.TRAIN_HDF5, 32, aug=None, preprocessors=[patchp, iap])
+
+        # construct the set of callbacks
+        ##path = os.path.sep.join([config.OUTPUT_PATH, "{}.png".format(
+            ##os.getpid())])
+        ##callbacks = [TrainingMonitor(path)]
+
         # data generator
-        dataGenerator = ImageDataGenerator(horizontal_flip = True, vertical_flip = True)
-        batchIterator = dataGenerator.flow((Ximg_train,[Xbathy_train,Xbathy_train_means]), batch_size=batch_size)
+        #dataGenerator = ImageDataGenerator(horizontal_flip = True, vertical_flip = True)
+        #batchIterator = dataGenerator.flow((Ximg_train,[Xbathy_train,Xbathy_train_means]), batch_size=batch_size)
+        #batchIterator = trainGen.generator()
 
         for epoch in range(epochs):
 
@@ -214,17 +250,20 @@ class CGAN():
             # ---------------------
 
             # Select a random half batch of images
-            #idx = np.random.randint(0, Ximg_train.shape[0], batch_size)
+            print("num Images {}".format(trainGen.numImages))
+            #idx = np.random.randint(0, trainGen.numImages, batch_size)
+            idx = random.sample(range(0,trainGen.numImages), batch_size)
+            print("idx {}".format(idx))
             #imgs, bpatches, bp_means = Ximg_train[idx], Xbathy_train[idx], Xbathy_train_means[idx]
 
-            imgs, bpatches, bp_means = batchIterator.next()
-            #print("shapes inputs {}, {}, {}".format(imgs.shape,bpatches.shape,bp_means.shape))
+            imgs, bpatches, bp_means = trainGen.get_batch_by_indeces(idx)
+            print("shapes inputs {}, {}, {}".format(imgs.shape,bpatches.shape,bp_means.shape))
             actual_batch_size =  imgs.shape[0]
             # Sample noise as generator input
-            #noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
-            noise = np.random.uniform(-1, 1, (batch_size, self.latent_dim))
+            noise = np.random.normal(0, 1, (actual_batch_size, self.latent_dim))
+            #noise = np.random.uniform(-1, 1, (actual_batch_size, self.latent_dim))
             # Generate a half batch of new images
-            gen_imgs = self.generator.predict([noise[:actual_batch_size], bpatches, bp_means])
+            gen_imgs = self.generator.predict([noise, bpatches, bp_means])
 
             # Train the discriminator
             d_loss_real = self.discriminator.train_on_batch([imgs, bpatches, bp_means], valid[:actual_batch_size])
@@ -236,15 +275,16 @@ class CGAN():
             # ---------------------
 
             # Condition on labels
-            # this is selecting random patches from a box around dive, presumably representative bathy
-
-            idx = np.random.randint(0, Xbathy_all.shape[0], batch_size)
-            random_bathy = Xbathy_all[idx]
-            random_bathy_means = Xbathy_all_means[idx]
+            ## this is selecting random patches from a box around dive, presumably representative bathy
+            noise = np.random.normal(0, 1, (actual_batch_size, self.latent_dim))
+            imgs, bpatches, bp_means = trainGen.get_random_batch()
+            #idx = np.random.randint(0, Xbathy_all.shape[0], batch_size)
+            #random_bathy = Xbathy_all[idx]
+            #random_bathy_means = Xbathy_all_means[idx]
             #sampled_labels = np.random.randint(0, 10, batch_size).reshape(-1, 1)
 
             # Train the generator
-            g_loss = self.combined.train_on_batch([noise, random_bathy, random_bathy_means], valid)
+            g_loss = self.combined.train_on_batch([noise, bpatches, bp_means], valid)
 
             # Plot the progress
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
@@ -252,8 +292,10 @@ class CGAN():
             d_loss_hist.append(d_loss[0])
             g_loss_hist.append(g_loss)
             # If at save interval => save generated image samples
+            # FIXME THIS ASSUMES A FIXED RANDOM ORDER
+
             if epoch % sample_interval == 0:
-                self.sample_images(epoch, Xbathy_train, Xbathy_train_means)
+                self.sample_images(epoch, trainGen)
 
                 # plotting the metrics
                 plt.plot(d_loss_hist)
@@ -266,14 +308,16 @@ class CGAN():
                 plt.savefig("metrics_cgan/metrics.png")
                 plt.close()
 
-    def sample_images(self, epoch, Xbathy_samples, Xbathy_samples_means):
+    def sample_images(self, epoch, dataGenerator):
         r, c = 2, 3
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
         noise = np.random.uniform(-1, 1, (r * c, self.latent_dim))
-        idx = np.random.randint(0, Xbathy_samples.shape[0], r*c)
-        random_bathy = Xbathy_samples[idx]
-        random_bathy_means = Xbathy_samples_means[idx]
 
+        # select a random subset of the batch
+        imgs, bpatches, bp_means = dataGenerator.get_random_batch()
+        idx = np.random.randint(0,imgs.shape[0], r * c)
+        random_bathy = bpatches[idx]
+        random_bathy_means = bp_means[idx]
         #print("random bathy size ", random_bathy.shape)
 
         #sampled_labels = np.arange(0, 10).reshape(-1, 1)
@@ -289,7 +333,7 @@ class CGAN():
             for j in range(c):
                 axs[i,2*j].imshow(gen_imgs[cnt,::])
                 #print("random bathy subset  size ", random_bathy[cnt,:,:,0].shape)
-                axs[i,2*j+1].imshow(random_bathy[cnt,:,:,0])
+                axs[i,2*j+1].imshow(random_bathy[cnt,:,:])
 
                 #axs[i,2*j+1].set_title("d {depth:.1f}".format(depth=random_bathy_means[cnt]))
                 axs[i,2*j+1].set_title("d %.1f" % (random_bathy_means[cnt]))
